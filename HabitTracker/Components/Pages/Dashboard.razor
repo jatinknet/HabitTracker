@@ -1,0 +1,111 @@
+@page "/dashboard"
+@rendermode InteractiveServer
+@inject IHabitService HabitService
+@inject IJSRuntime JS
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Your habit performance at a glance for @(new DateTime(_year, _month, 1).ToString("MMMM yyyy")).</p>
+</div>
+
+@if (_stats is null)
+{
+    <div class="text-center text-muted py-5"><div class="spinner-border text-warning"></div></div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#27ae60;"><i class="bi bi-star-fill"></i></div>
+                <div class="stat-value">@_stats.BestHabitPercent%</div>
+                <div class="stat-label">Top habit: @_stats.BestHabitName</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e74c3c;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div class="stat-value">@_stats.NeedsWorkHabitPercent%</div>
+                <div class="stat-label">Needs work: @_stats.NeedsWorkHabitName</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f4a825;"><i class="bi bi-fire"></i></div>
+                <div class="stat-value">@_stats.LongestStreakOverall days</div>
+                <div class="stat-label">Longest streak: @_stats.LongestStreakHabitName</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#2e86de;"><i class="bi bi-list-check"></i></div>
+                <div class="stat-value">@_habitCount</div>
+                <div class="stat-label">Active habits tracked</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card-modern p-4 h-100">
+                <h5 class="fw-bold mb-3">Completion by Habit</h5>
+                @if (_stats.HabitBreakdown.Any())
+                {
+                    <div style="height: @(Math.Max(180, _stats.HabitBreakdown.Count * 40))px;">
+                        <canvas id="habit-breakdown-chart"></canvas>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Add some habits to see this chart.</p>
+                }
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card-modern p-4 h-100">
+                <h5 class="fw-bold mb-3">6-Month Completion Trend</h5>
+                <div style="height:260px;">
+                    <canvas id="trend-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int _year = DateTime.Now.Year;
+    private int _month = DateTime.Now.Month;
+    private DashboardStats? _stats;
+    private int _habitCount;
+    private bool _chartsPending = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await HabitService.GetDashboardStatsAsync(_year, _month);
+        var habits = await HabitService.GetActiveHabitsAsync();
+        _habitCount = habits.Count;
+        _chartsPending = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_chartsPending && _stats is not null)
+        {
+            _chartsPending = false;
+
+            if (_stats.HabitBreakdown.Any())
+            {
+                var labels = _stats.HabitBreakdown.Select(h => h.HabitName).ToArray();
+                var values = _stats.HabitBreakdown.Select(h => h.Percent).ToArray();
+                var colors = _stats.HabitBreakdown.Select(h => h.Color).ToArray();
+                await JS.InvokeVoidAsync("renderHabitBreakdownChart", "habit-breakdown-chart", labels, values, colors);
+            }
+
+            var trendLabels = _stats.Last6MonthsTrend.Select(t => t.Month).ToArray();
+            var trendValues = _stats.Last6MonthsTrend.Select(t => t.Percent).ToArray();
+            await JS.InvokeVoidAsync("renderTrendChart", "trend-chart", trendLabels, trendValues);
+        }
+    }
+}

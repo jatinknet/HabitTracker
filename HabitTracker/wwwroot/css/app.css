@@ -1,0 +1,166 @@
+:root {
+    --bg: #f4f6fb;
+    --card-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --radius: 16px;
+    --shadow: 0 4px 20px rgba(31, 41, 55, 0.06);
+    --shadow-hover: 0 8px 28px rgba(31, 41, 55, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    background: var(--bg);
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text-main);
+}
+
+.app-shell { min-height: 100vh; }
+
+/* ---------- Sidebar ---------- */
+.app-sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: linear-gradient(180deg, #1b1f3b 0%, #2c2f6b 100%);
+    color: #fff;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+}
+.sidebar-brand { border-bottom: 1px solid rgba(255,255,255,.08); }
+.brand-badge {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, #f4a825, #e74c3c);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+}
+.brand-title { font-weight: 700; font-size: 1.05rem; line-height: 1.1; }
+.brand-sub { font-size: .72rem; color: rgba(255,255,255,.55); }
+
+.app-sidebar .nav-link {
+    color: rgba(255,255,255,.75);
+    border-radius: 10px;
+    padding: .65rem .9rem;
+    font-weight: 500;
+    font-size: .92rem;
+    display: flex; align-items: center; gap: .6rem;
+    transition: all .15s ease;
+}
+.app-sidebar .nav-link i { font-size: 1.05rem; width: 20px; text-align: center; }
+.app-sidebar .nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+.app-sidebar .nav-link.active {
+    background: linear-gradient(135deg, #f4a825, #e0730f);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(244,168,37,.35);
+}
+.sidebar-footer { color: rgba(255,255,255,.4); font-size: .72rem; border-top: 1px solid rgba(255,255,255,.08); }
+
+/* ---------- Main content ---------- */
+.app-main { min-width: 0; }
+.app-content { padding: 1.75rem 2rem 3rem; max-width: 1600px; }
+
+.page-header { margin-bottom: 1.5rem; }
+.page-header h1 { font-size: 1.6rem; font-weight: 700; margin: 0; }
+.page-header p { color: var(--text-muted); margin: .15rem 0 0; }
+
+.card-modern {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: none;
+    transition: box-shadow .2s ease;
+}
+.card-modern:hover { box-shadow: var(--shadow-hover); }
+
+/* ---------- Month navigator ---------- */
+.month-nav {
+    background: var(--card-bg);
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+    padding: .35rem .5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+.month-nav button {
+    border: none; background: #f1f2f8; width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: #333;
+    transition: background .15s ease;
+}
+.month-nav button:hover { background: #e5e7f5; }
+.month-nav .month-label { font-weight: 600; min-width: 140px; text-align: center; }
+
+/* ---------- Tracker table ---------- */
+.tracker-wrapper { overflow-x: auto; border-radius: var(--radius); background: var(--card-bg); box-shadow: var(--shadow); }
+.tracker-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; font-size: .82rem; }
+.tracker-table th, .tracker-table td { padding: .35rem .4rem; text-align: center; vertical-align: middle; white-space: nowrap; }
+.tracker-table thead th { position: sticky; top: 0; z-index: 2; }
+
+.habit-name-col { text-align: left !important; min-width: 210px; position: sticky; left: 0; background: var(--card-bg); z-index: 3; }
+.tracker-table thead .habit-name-col { z-index: 4; }
+
+.week-band-header {
+    color: #fff; font-weight: 700; border-radius: 8px 8px 0 0; padding: .4rem 0; font-size: .78rem;
+    letter-spacing: .03em;
+}
+.day-num-cell { font-weight: 600; font-size: .74rem; color: #fff; border-radius: 6px; padding: .25rem .1rem; }
+.day-letter-cell { font-size: .68rem; color: var(--text-muted); font-weight: 600; }
+
+.habit-row-name { display: flex; align-items: center; gap: .5rem; font-weight: 500; }
+.habit-icon-badge {
+    width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: .85rem; flex-shrink: 0;
+}
+.habit-actions { opacity: 0; transition: opacity .15s ease; }
+.habit-row:hover .habit-actions { opacity: 1; }
+.habit-actions button { border: none; background: none; color: var(--text-muted); padding: 0 .2rem; }
+.habit-actions button:hover { color: #333; }
+
+/* Checkbox cells */
+.day-check {
+    width: 26px; height: 26px; border-radius: 7px; border: 2px solid #dfe3ee; background: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; transition: all .12s ease; color: transparent;
+}
+.day-check:hover { transform: scale(1.08); border-color: #bcc2d6; }
+.day-check.checked { color: #fff; border-color: transparent; }
+.day-check.future { opacity: .35; cursor: not-allowed; }
+.day-check.future:hover { transform: none; }
+
+.goal-col, .progress-col { min-width: 90px; }
+.mini-progress { height: 8px; border-radius: 999px; background: #eef0f6; overflow: hidden; width: 100%; }
+.mini-progress > div { height: 100%; border-radius: 999px; transition: width .3s ease; }
+
+.footer-row td { font-weight: 600; background: #fafbfd; }
+.footer-row.total-row td { background: #f1f2f8; font-weight: 700; }
+
+/* Weekly summary cards */
+.week-summary-card { border-radius: 14px; padding: 1rem; color: #fff; position: relative; overflow: hidden; }
+.week-summary-card .pct { font-size: 1.6rem; font-weight: 700; }
+.week-summary-card .label { font-size: .75rem; opacity: .9; }
+
+.donut-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto; }
+.donut-wrap canvas { width: 100% !important; height: 100% !important; }
+.donut-center-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; }
+
+/* Stat cards on dashboard */
+.stat-card { padding: 1.25rem; border-radius: var(--radius); background: var(--card-bg); box-shadow: var(--shadow); }
+.stat-card .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff; margin-bottom: .6rem; }
+.stat-card .stat-value { font-size: 1.5rem; font-weight: 700; }
+.stat-card .stat-label { color: var(--text-muted); font-size: .82rem; }
+
+/* Buttons */
+.btn-brand { background: linear-gradient(135deg, #f4a825, #e0730f); border: none; color: #fff; font-weight: 600; }
+.btn-brand:hover { color: #fff; filter: brightness(1.05); }
+
+/* Modal polish */
+.modal-content { border-radius: 16px; border: none; }
+.color-swatch { width: 30px; height: 30px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; display: inline-block; }
+.color-swatch.selected { border-color: #333; box-shadow: 0 0 0 2px #fff inset; }
+.icon-swatch { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: #f1f2f8; cursor: pointer; border: 2px solid transparent; }
+.icon-swatch.selected { border-color: #f4a825; background: #fff3e0; }
+
+@media (max-width: 900px) {
+    .app-sidebar { position: fixed; transform: translateX(-100%); transition: transform .2s ease; z-index: 50; }
+    .app-content { padding: 1rem; }
+}

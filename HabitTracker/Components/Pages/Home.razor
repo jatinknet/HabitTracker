@@ -1,0 +1,253 @@
+@page "/"
+@rendermode InteractiveServer
+@inject IHabitService HabitService
+@inject IJSRuntime JS
+
+<PageTitle>Habit Tracker</PageTitle>
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 page-header">
+    <div>
+        <h1>Habit Tracker</h1>
+        <p>Stay consistent, one checkbox at a time.</p>
+    </div>
+
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="month-nav">
+            <button @onclick="() => ChangeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+            <span class="month-label">@(new DateTime(_year, _month, 1).ToString("MMMM yyyy"))</span>
+            <button @onclick="() => ChangeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <button class="btn btn-brand rounded-pill px-3" @onclick="OpenAddHabitModal">
+            <i class="bi bi-plus-lg"></i> Add Habit
+        </button>
+    </div>
+</div>
+
+@if (_data is null)
+{
+    <div class="text-center text-muted py-5"><div class="spinner-border text-warning"></div></div>
+}
+else
+{
+    <div class="tracker-wrapper mb-4">
+        <table class="tracker-table mb-0">
+            <thead>
+                <tr>
+                    <th class="habit-name-col bg-white"></th>
+                    @foreach (var week in _data.Weeks)
+                    {
+                        <th colspan="@week.Days.Count" style="background:@week.ColorHex;">
+                            <div class="week-band-header">Week @week.WeekNumber</div>
+                        </th>
+                    }
+                    <th class="goal-col bg-white">Goal</th>
+                    <th class="progress-col bg-white">Progress</th>
+                </tr>
+                <tr>
+                    <th class="habit-name-col bg-white"></th>
+                    @foreach (var week in _data.Weeks)
+                    {
+                        @foreach (var day in week.Days)
+                        {
+                            <th style="background:transparent;">
+                                <div class="day-num-cell" style="background:@week.ColorHex;">@day.Day</div>
+                            </th>
+                        }
+                    }
+                    <th class="bg-white"></th>
+                    <th class="bg-white"></th>
+                </tr>
+                <tr>
+                    <th class="habit-name-col bg-white">Habits</th>
+                    @foreach (var day in _data.Days)
+                    {
+                        <th class="day-letter-cell">@day.ToString("ddd").Substring(0, 1)</th>
+                    }
+                    <th class="bg-white"></th>
+                    <th class="bg-white"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _data.HabitRows)
+                {
+                    <tr class="habit-row">
+                        <td class="habit-name-col">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="habit-row-name">
+                                    <span class="habit-icon-badge" style="background:@row.Habit.ColorHex;">
+                                        <i class="bi @row.Habit.Icon"></i>
+                                    </span>
+                                    <span>@row.Habit.Name</span>
+                                </div>
+                                <div class="habit-actions">
+                                    <button title="Edit" @onclick="() => OpenEditHabitModal(row.Habit)"><i class="bi bi-pencil"></i></button>
+                                    <button title="Delete" @onclick="() => DeleteHabit(row.Habit.Id)"><i class="bi bi-trash text-danger"></i></button>
+                                </div>
+                            </div>
+                        </td>
+                        @foreach (var day in _data.Days)
+                        {
+                            var completed = row.DayStatus[day];
+                            var isFuture = day > _today;
+                            <td>
+                                <button class="day-check @(completed ? "checked" : "") @(isFuture ? "future" : "")"
+                                        style="@(completed ? $"background:{row.Habit.ColorHex};" : "")"
+                                        disabled="@isFuture"
+                                        @onclick="() => ToggleDay(row.Habit.Id, day)">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </td>
+                        }
+                        <td class="goal-col">
+                            <input type="number" min="1" class="form-control form-control-sm text-center mx-auto" style="width:64px;"
+                                   value="@row.Habit.MonthlyGoal"
+                                   @onchange="e => UpdateGoal(row.Habit, e.Value)" />
+                        </td>
+                        <td class="progress-col">
+                            <div class="d-flex flex-column align-items-center gap-1">
+                                <div class="mini-progress"><div style="width:@(row.GoalProgressPercent)%; background:@row.Habit.ColorHex;"></div></div>
+                                <small class="text-muted">@row.CompletedCount / @row.Habit.MonthlyGoal &middot; @(row.CurrentStreak)&#128293;</small>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (!_data.HabitRows.Any())
+                {
+                    <tr><td colspan="10" class="text-center text-muted py-4">No habits yet — click "Add Habit" to start tracking.</td></tr>
+                }
+            </tbody>
+            @if (_data.HabitRows.Any())
+            {
+                <tfoot>
+                    <tr class="footer-row">
+                        <td class="habit-name-col text-start">Habits Completed</td>
+                        @foreach (var day in _data.Days)
+                        {
+                            <td>@_data.CompletedPerDay.GetValueOrDefault(day)</td>
+                        }
+                        <td colspan="2"></td>
+                    </tr>
+                    <tr class="footer-row">
+                        <td class="habit-name-col text-start">Habits Incomplete</td>
+                        @foreach (var day in _data.Days)
+                        {
+                            <td>@_data.IncompletePerDay.GetValueOrDefault(day)</td>
+                        }
+                        <td colspan="2"></td>
+                    </tr>
+                    <tr class="footer-row total-row">
+                        <td class="habit-name-col text-start">Total</td>
+                        <td colspan="@_data.Days.Count" class="text-start ps-3">
+                            @_data.TotalCompleted completed &middot; @_data.TotalIncomplete incomplete
+                        </td>
+                        <td colspan="2">@_data.TotalPercentage%</td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+
+    <div class="card-modern p-4">
+        <h5 class="fw-bold mb-3">Progress per Week</h5>
+        <div class="row g-3 align-items-center">
+            @foreach (var week in _data.Weeks)
+            {
+                <div class="col-6 col-md-2">
+                    <div class="donut-wrap">
+                        <canvas id="donut-week-@week.WeekNumber"></canvas>
+                        <div class="donut-center-label">@week.Percentage%</div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <div class="fw-semibold" style="color:@week.ColorHex;">Week @week.WeekNumber</div>
+                        <small class="text-muted">@week.Completed done &middot; @week.Incomplete left</small>
+                    </div>
+                </div>
+            }
+            <div class="col-6 col-md-2 border-start ps-4">
+                <div class="donut-wrap">
+                    <canvas id="donut-total"></canvas>
+                    <div class="donut-center-label">@_data.TotalPercentage%</div>
+                </div>
+                <div class="text-center mt-2">
+                    <div class="fw-bold">Total Progress</div>
+                    <small class="text-muted">This month</small>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<HabitFormModal @ref="_modalRef" OnSaved="ReloadData" />
+
+@code {
+    private int _year = DateTime.Now.Year;
+    private int _month = DateTime.Now.Month;
+    private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Now);
+    private MonthlyTrackerData? _data;
+    private HabitFormModal? _modalRef;
+    private bool _chartsPending = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadData();
+    }
+
+    private async Task ReloadData()
+    {
+        _data = await HabitService.GetMonthlyDataAsync(_year, _month);
+        _chartsPending = true;
+        StateHasChanged();
+    }
+
+    private async Task ChangeMonth(int delta)
+    {
+        var d = new DateTime(_year, _month, 1).AddMonths(delta);
+        _year = d.Year;
+        _month = d.Month;
+        await ReloadData();
+    }
+
+    private async Task ToggleDay(int habitId, DateOnly day)
+    {
+        if (day > _today) return;
+        await HabitService.ToggleEntryAsync(habitId, day);
+        await ReloadData();
+    }
+
+    private async Task UpdateGoal(Habit habit, object? value)
+    {
+        if (value is null) return;
+        if (int.TryParse(value.ToString(), out var goal) && goal > 0)
+        {
+            habit.MonthlyGoal = goal;
+            await HabitService.UpdateHabitAsync(habit);
+            await ReloadData();
+        }
+    }
+
+    private void OpenAddHabitModal() => _modalRef?.ShowForNew();
+
+    private void OpenEditHabitModal(Habit habit) => _modalRef?.ShowForEdit(habit);
+
+    private async Task DeleteHabit(int habitId)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Delete this habit? Its history will be hidden from the tracker.");
+        if (!confirmed) return;
+        await HabitService.DeleteHabitAsync(habitId);
+        await ReloadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_chartsPending && _data is not null)
+        {
+            _chartsPending = false;
+            foreach (var week in _data.Weeks)
+            {
+                await JS.InvokeVoidAsync("renderDonut", $"donut-week-{week.WeekNumber}", week.Percentage, week.ColorHex);
+            }
+            await JS.InvokeVoidAsync("renderDonut", "donut-total", _data.TotalPercentage, "#8e44ad");
+        }
+    }
+}
